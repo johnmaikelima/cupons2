@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { uploadFile } from '@/lib/ftp';
 
 export async function POST(request: Request) {
   try {
@@ -20,13 +19,15 @@ export async function POST(request: Request) {
     const extension = originalName.split('.').pop();
     const fileName = `${timestamp}-${originalName}`;
     
-    // Usa o diretório public/uploads existente
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    await writeFile(join(uploadDir, fileName), Buffer.from(await file.arrayBuffer()));
+    // Converte o arquivo para buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Retorna o caminho relativo do arquivo
+    // Faz upload via FTP
+    const url = await uploadFile(buffer, fileName);
+
+    // Retorna a URL pública do arquivo
     return NextResponse.json({ 
-      url: `/uploads/${fileName}`
+      url
     });
   } catch (error) {
     console.error('Erro ao fazer upload:', error);
