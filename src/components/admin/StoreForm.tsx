@@ -27,9 +27,10 @@ export default function StoreForm({ initialData }: StoreFormProps) {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const logoUrl = formData.get('logo');
     const data = {
       name: formData.get('name'),
-      logo: formData.get('logo'),
+      logo: logoUrl ? `${logoUrl}?v=${Date.now()}` : '', // Adiciona timestamp para forçar atualização do cache
       description: description || '', // Usa o estado do editor
       affiliateLink: formData.get('affiliateLink'),
       featured: formData.get('featured') === 'on',
