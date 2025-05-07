@@ -1,6 +1,42 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongoose';
-import { Coupon } from '@/models/Coupon';
+import connectDB from '@/lib/mongodb';
+import mongoose from 'mongoose';
+
+// Definindo os modelos
+const StoreSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  logo: { type: String },
+  url: { type: String },
+  description: { type: String },
+  featured: { type: Boolean, default: false },
+  active: { type: Boolean, default: true },
+  provider: { type: String, required: true },
+  hasOffers: { type: Boolean, default: false },
+  externalId: { type: String },
+  affiliateLink: { type: String },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const CouponSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  code: { type: String, required: true },
+  description: { type: String },
+  type: { type: String, enum: ['percentage', 'fixed', 'freeShipping'], required: true },
+  value: { type: Number },
+  url: { type: String },
+  affiliateLink: { type: String },
+  store: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
+  expiresAt: { type: Date, required: true },
+  active: { type: Boolean, default: true },
+  provider: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const Store = mongoose.models.Store || mongoose.model('Store', StoreSchema);
+const Coupon = mongoose.models.Coupon || mongoose.model('Coupon', CouponSchema);
 
 export async function GET(request: Request) {
   try {
