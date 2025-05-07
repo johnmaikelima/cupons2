@@ -5,15 +5,22 @@ import { Coupon } from '@/models/Coupon';
 
 export async function GET(request: Request) {
   try {
+    console.log('Iniciando busca de cupons...');
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get('storeId');
     
+    console.log('Conectando ao MongoDB...');
     await connectDB();
+    console.log('Conectado ao MongoDB');
     
     const query = storeId ? { store: storeId } : {};
+    console.log('Query:', query);
+    
+    console.log('Buscando cupons...');
     const coupons = await Coupon.find(query)
       .populate('store')
       .sort({ createdAt: -1 });
+    console.log('Cupons encontrados:', coupons.length);
       
     const response = NextResponse.json(coupons);
     response.headers.set('Cache-Control', 'no-store');

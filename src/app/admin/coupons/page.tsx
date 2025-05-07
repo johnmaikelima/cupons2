@@ -45,9 +45,17 @@ export default function CouponsPage() {
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
+        console.log('Iniciando busca de cupons...');
         const response = await fetch('/api/coupons');
-        if (!response.ok) throw new Error('Erro ao carregar cupons');
+        console.log('Status da resposta:', response.status);
+        
+        if (!response.ok) {
+          console.log('Resposta não ok:', response.status, response.statusText);
+          throw new Error('Erro ao carregar cupons');
+        }
+        
         const data = await response.json();
+        console.log('Dados recebidos:', data.length, 'cupons');
         setCoupons(data);
       } catch (error) {
         console.error('Erro ao carregar cupons:', error);
