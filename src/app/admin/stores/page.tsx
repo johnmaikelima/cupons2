@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { Store } from '@/models/Store';
 import connectDB from '@/lib/mongodb';
 
+// Desabilita cache para esta página
+export const revalidate = 0;
+
 export default async function StoresPage() {
   await connectDB();
   const stores = await Store.find().sort({ featured: -1, name: 1 });
