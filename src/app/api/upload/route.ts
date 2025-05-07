@@ -20,16 +20,9 @@ export async function POST(request: Request) {
     const extension = originalName.split('.').pop();
     const fileName = `${timestamp}-${originalName}`;
     
-    // Cria o diretório public/uploads se não existir
+    // Usa o diretório public/uploads existente
     const uploadDir = join(process.cwd(), 'public', 'uploads');
-    try {
-      await writeFile(join(uploadDir, fileName), Buffer.from(await file.arrayBuffer()));
-    } catch (error) {
-      // Se o diretório não existir, cria
-      const { mkdir } = require('fs/promises');
-      await mkdir(uploadDir, { recursive: true });
-      await writeFile(join(uploadDir, fileName), Buffer.from(await file.arrayBuffer()));
-    }
+    await writeFile(join(uploadDir, fileName), Buffer.from(await file.arrayBuffer()));
 
     // Retorna o caminho relativo do arquivo
     return NextResponse.json({ 
