@@ -1,6 +1,33 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { Store } from '@/models/Store';
+import mongoose from 'mongoose';
+
+// Definindo o modelo Store
+const StoreSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  logo: { type: String },
+  url: { type: String },
+  description: { type: String },
+  featured: { type: Boolean, default: false },
+  active: { type: Boolean, default: true },
+  provider: { type: String },
+  hasOffers: { type: Boolean, default: false },
+  externalId: { type: String },
+  affiliateLink: { type: String }
+}, {
+  timestamps: true
+});
+
+// Deleta o modelo existente se ele existir
+if (mongoose.models.Store) {
+  delete mongoose.models.Store;
+}
+
+// Registra o modelo Store
+const Store = mongoose.model('Store', StoreSchema);
+
+// Importa o modelo Coupon
 import { Coupon } from '@/models/Coupon';
 
 export async function GET(request: Request) {
