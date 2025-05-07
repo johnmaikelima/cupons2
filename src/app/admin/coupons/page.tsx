@@ -5,13 +5,22 @@ import { useState, useEffect } from 'react';
 
 interface Coupon {
   _id: string;
-  title: string;
-  type: 'percentage' | 'fixed' | 'freeShipping';
-  expiresAt: string; 
-  active: boolean;
+  title?: string;
+  description: string;
+  code?: string;
+  type?: 'COUPON' | 'URL_CUPONADA';
+  url: string;
+  affiliateLink?: string;
+  image?: string;
   store: {
     name: string;
   };
+  expiresAt?: string;
+  discount?: string;
+  active?: boolean;
+  provider?: string;
+  externalId?: string;
+  slug: string;
 }
 
 function formatDate(date: string) {
@@ -132,7 +141,10 @@ export default function CouponsPage() {
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Título
+                Título/Descrição
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Código
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Loja
@@ -164,7 +176,12 @@ export default function CouponsPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-gray-900">
-                    {coupon.title}
+                    {coupon.title || coupon.description}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-500">
+                    {coupon.code || '-'}
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -174,9 +191,8 @@ export default function CouponsPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-500">
-                    {coupon.type === 'percentage' && 'Porcentagem'}
-                    {coupon.type === 'fixed' && 'Valor Fixo'}
-                    {coupon.type === 'freeShipping' && 'Frete Grátis'}
+                    {coupon.type === 'COUPON' && 'Cupom'}
+                    {coupon.type === 'URL_CUPONADA' && 'Link'}
                   </div>
                 </td>
                 <td className="px-6 py-4">
