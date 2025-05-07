@@ -1,4 +1,4 @@
-import * as ftp from 'basic-ftp';
+import Client from 'ftp';
 
 const FTP_CONFIG = {
   host: '154.12.241.156',
@@ -9,37 +9,29 @@ const FTP_CONFIG = {
 
 const BASE_URL = 'https://imagens.linkcompra.com';
 
-export async function uploadFile(fileBuffer: Buffer | Uint8Array, fileName: string): Promise<string> {
-  const client = new ftp.Client();
-  client.ftp.verbose = false;
-  
-  try {
-    await client.access(FTP_CONFIG);
-    
-    // Navega para o diretório correto
-    await client.cd('/home/imagens.linkcompra.com');
-    
-    // Cria um arquivo temporário e faz upload
-    const { writeFile } = require('fs/promises');
-    const { join } = require('path');
-    const { tmpdir } = require('os');
-    
-    const tempFile = join(tmpdir(), fileName);
-    await writeFile(tempFile, fileBuffer);
-    
-    // Faz upload do arquivo
-    await client.uploadFrom(tempFile, fileName);
-    
-    // Remove o arquivo temporário
-    const { unlink } = require('fs/promises');
-    await unlink(tempFile);
-    
-    // Retorna a URL pública do arquivo
-    return `${BASE_URL}/${fileName}`;
-  } catch (error) {
-    console.error('Erro no upload FTP:', error);
-    throw new Error('Erro ao fazer upload do arquivo');
-  } finally {
-    client.close();
-  }
+export function uploadFile(fileBuffer: Buffer, fileName: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const client = new Client();
+
+    client.on('ready', () => {
+      client.put(fileBuffer, `/home/imagens.linkcompra.com/${fileName}`, (err) => {
+        client.end();
+        
+        if (err) {
+          console.error('Erro no upload FTP:', err);
+          reject(new Error('Erro ao fazer upload do arquivo'));
+        } else {
+          resolve(`${BASE_URL}/${fileName}`);
+        }
+      });
+    });
+
+    client.on('error', (err) => {
+      client.end();
+      console.error('Erro na conexão FTP:', err);
+      reject(new Error('Erro na conexão FTP'));
+    });
+
+    client.connect(FTP_CONFIG);
+  });
 }
