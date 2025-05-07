@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { EditCouponForm } from './edit-form';
+import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import { Store } from '@/models/Store';
 import { Coupon } from '@/models/Coupon';
@@ -51,28 +52,24 @@ async function getData(id: string) {
     console.log('Loja do cupom:', coupon.store);
     console.log('Lojas disponíveis:', JSON.stringify(stores, null, 2));
 
-    if (!coupon || !coupon._id) {
-      throw new Error('Dados do cupom inválidos');
-    }
-
-    // Garantindo que a loja seja uma string válida
+    // Formata os dados para o formulário
     const formattedCoupon = {
-      ...coupon,
       _id: coupon._id.toString(),
-      // Se store for um objeto, pegamos o _id, se for string, usamos direto
+      title: coupon.title || '',
+      description: coupon.description,
+      code: coupon.code || '',
+      url: coupon.url || '',
       store: typeof coupon.store === 'object' ? coupon.store._id.toString() : coupon.store.toString(),
-      expiryDate: coupon.expiresAt 
-        ? new Date(coupon.expiresAt).toISOString().split('T')[0]
-        : '',
+      expiryDate: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().split('T')[0] : '',
+      type: coupon.type || 'COUPON',
+      active: coupon.active
     };
-
-    console.log('Cupom formatado:', JSON.stringify(formattedCoupon, null, 2));
-
+    
     return {
       coupon: formattedCoupon,
       stores: stores.map(store => ({
         _id: store._id.toString(),
-        name: store.name,
+        name: store.name
       }))
     };
   } catch (error) {
