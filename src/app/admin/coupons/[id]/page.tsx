@@ -1,5 +1,8 @@
 import { Suspense } from 'react';
 import { EditCouponForm } from './edit-form';
+import connectDB from '@/lib/mongodb';
+import { Store } from '@/models/Store';
+import { Coupon } from '@/models/Coupon';
 
 interface Props {
   params: {
