@@ -12,7 +12,7 @@ interface Props {
 }
 
 async function getData(id: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://cupons2.vercel.app';
   const couponUrl = `${baseUrl}/api/coupons/${id}`;
   const storesUrl = `${baseUrl}/api/stores`;
 
