@@ -20,6 +20,8 @@ export default function StoreForm({ initialData }: StoreFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [description, setDescription] = useState(initialData?.description || '');
+  const [logoUrl, setLogoUrl] = useState(initialData?.logo || '');
+  const [uploadProgress, setUploadProgress] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,17 +86,99 @@ export default function StoreForm({ initialData }: StoreFormProps) {
         />
       </div>
 
-      <div>
-        <label htmlFor="logo" className="block text-sm font-medium text-gray-700">
-          URL do Logo
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Logo da Loja
         </label>
-        <input
-          type="url"
-          id="logo"
-          name="logo"
-          defaultValue={initialData?.logo}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-        />
+        
+        {/* Campo para URL */}
+        <div className="flex gap-2">
+          <input
+            type="url"
+            id="logo"
+            name="logo"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            placeholder="URL do logo"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+          />
+          {logoUrl && (
+            <button
+              type="button"
+              onClick={() => setLogoUrl('')}
+              className="px-3 py-2 text-sm text-red-600 hover:text-red-700"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Separador */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-2 text-gray-500">ou</span>
+          </div>
+        </div>
+
+        {/* Upload de arquivo */}
+        <div className="flex items-center justify-center">
+          <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+            <span>Fazer upload de imagem</span>
+            <input
+              id="file-upload"
+              name="file"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={async (e) => {
+                if (e.target.files?.[0]) {
+                  setUploadProgress(true);
+                  const formData = new FormData();
+                  formData.append('file', e.target.files[0]);
+
+                  try {
+                    const response = await fetch('/api/upload', {
+                      method: 'POST',
+                      body: formData
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Erro ao fazer upload');
+                    }
+
+                    const data = await response.json();
+                    setLogoUrl(data.url);
+                  } catch (error) {
+                    setError('Erro ao fazer upload da imagem');
+                  } finally {
+                    setUploadProgress(false);
+                  }
+                }
+              }}
+            />
+          </label>
+        </div>
+
+        {/* Preview da imagem */}
+        {logoUrl && (
+          <div className="mt-2">
+            <img
+              src={logoUrl}
+              alt="Preview"
+              className="h-32 w-32 object-contain rounded-lg border border-gray-200"
+            />
+          </div>
+        )}
+
+        {/* Indicador de progresso */}
+        {uploadProgress && (
+          <div className="text-sm text-gray-500 text-center">
+            Fazendo upload...
+          </div>
+        )}
       </div>
 
       <div>
