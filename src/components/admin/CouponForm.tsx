@@ -15,7 +15,7 @@ interface CouponFormProps {
     title: string;
     description: string;
     expiryDate: string;
-    type: 'percentage' | 'fixed' | 'freeShipping';
+    type: 'COUPON' | 'URL_CUPONADA';
     image?: string;
     affiliateLink: string;
     store: string;
@@ -136,9 +136,8 @@ export default function CouponForm({ stores, initialData }: CouponFormProps) {
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-blue-500 text-gray-900"
         >
           <option value="">Selecione um tipo</option>
-          <option value="percentage">Porcentagem</option>
-          <option value="fixed">Valor Fixo</option>
-          <option value="freeShipping">Frete Grátis</option>
+          <option value="COUPON">Cupom</option>
+          <option value="URL_CUPONADA">Link</option>
         </select>
       </div>
 
