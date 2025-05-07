@@ -1,37 +1,27 @@
-import Client from 'ftp';
+import Client from 'ssh2-sftp-client';
 
-const FTP_CONFIG = {
+const SFTP_CONFIG = {
   host: '154.12.241.156',
-  user: 'admin_imagens',
+  username: 'admin_imagens',
   password: '%26wz6IAl70e!rF^',
-  secure: false
+  port: 22
 };
 
 const BASE_URL = 'https://imagens.linkcompra.com';
 
-export function uploadFile(fileBuffer: Buffer, fileName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const client = new Client();
-
-    client.on('ready', () => {
-      client.put(fileBuffer, `/home/imagens.linkcompra.com/${fileName}`, (err) => {
-        client.end();
-        
-        if (err) {
-          console.error('Erro no upload FTP:', err);
-          reject(new Error('Erro ao fazer upload do arquivo'));
-        } else {
-          resolve(`${BASE_URL}/${fileName}`);
-        }
-      });
-    });
-
-    client.on('error', (err) => {
-      client.end();
-      console.error('Erro na conexão FTP:', err);
-      reject(new Error('Erro na conexão FTP'));
-    });
-
-    client.connect(FTP_CONFIG);
-  });
+export async function uploadFile(fileBuffer: Buffer, fileName: string): Promise<string> {
+  const client = new Client();
+  
+  try {
+    await client.connect(SFTP_CONFIG);
+    
+    await client.put(fileBuffer, `/home/imagens.linkcompra.com/${fileName}`);
+    
+    return `${BASE_URL}/${fileName}`;
+  } catch (error) {
+    console.error('Erro no upload SFTP:', error);
+    throw new Error('Erro ao fazer upload do arquivo');
+  } finally {
+    await client.end();
+  }
 }
