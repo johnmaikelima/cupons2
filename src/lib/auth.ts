@@ -25,36 +25,52 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Credenciais inválidas');
+        try {
+          console.log('Iniciando autenticação...');
+          
+          if (!credentials?.email || !credentials?.password) {
+            console.log('Credenciais faltando:', { email: !!credentials?.email, password: !!credentials?.password });
+            throw new Error('Credenciais inválidas');
+          }
+
+          console.log('Conectando ao MongoDB...');
+          await connectDB();
+          console.log('Conectado ao MongoDB');
+
+          const UserModel = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+            email: { type: String, required: true, unique: true },
+            password: { type: String, required: true },
+            isAdmin: { type: Boolean, default: false },
+            createdAt: { type: Date, default: Date.now }
+          }));
+
+          console.log('Buscando usuário...');
+          const user = await UserModel.findOne({ email: credentials.email });
+          console.log('Usuário encontrado:', !!user);
+          
+          if (!user || !user.password) {
+            console.log('Usuário não encontrado ou sem senha');
+            throw new Error('Usuário não encontrado');
+          }
+
+          console.log('Verificando senha...');
+          const isValid = await bcrypt.compare(credentials.password, user.password);
+          console.log('Senha válida:', isValid);
+
+          if (!isValid) {
+            throw new Error('Senha incorreta');
+          }
+
+          console.log('Autenticação bem sucedida');
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            isAdmin: user.isAdmin
+          };
+        } catch (error) {
+          console.error('Erro na autenticação:', error);
+          throw error;
         }
-
-        await connectDB();
-
-        const UserModel = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
-          email: { type: String, required: true, unique: true },
-          password: { type: String, required: true },
-          isAdmin: { type: Boolean, default: false },
-          createdAt: { type: Date, default: Date.now }
-        }));
-
-        const user = await UserModel.findOne({ email: credentials.email });
-        
-        if (!user || !user.password) {
-          throw new Error('Usuário não encontrado');
-        }
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isValid) {
-          throw new Error('Senha incorreta');
-        }
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          isAdmin: user.isAdmin
-        };
       }
     })
   ],
