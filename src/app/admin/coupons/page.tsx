@@ -3,9 +3,6 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
-// Desabilita cache para esta página
-export const revalidate = 0;
-
 interface Coupon {
   _id: string;
   title?: string;

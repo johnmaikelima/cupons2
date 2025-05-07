@@ -15,7 +15,9 @@ export async function GET(request: Request) {
       .populate('store')
       .sort({ createdAt: -1 });
       
-    return NextResponse.json(coupons);
+    const response = NextResponse.json(coupons);
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   } catch (error) {
     console.error('Erro ao buscar cupons:', error);
     return NextResponse.json({ error: 'Erro ao buscar cupons' }, { status: 500 });
