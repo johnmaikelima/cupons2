@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { connectToDatabase } from '@/lib/mongodb';
+import connectDB from '@/lib/mongodb';
 import { User } from '@/models/User';
+import mongoose from 'mongoose';
 
 // Função para criar admin via interface web
 export async function GET(request: Request) {
@@ -60,7 +61,8 @@ export async function GET(request: Request) {
               }
             } catch (error) {
               document.getElementById('message').className = 'error';
-              document.getElementById('message').textContent = 'Erro ao criar admin';
+              document.getElementById('message').textContent = 'Erro ao criar admin: ' + error;
+              console.error('Erro:', error);
             }
           };
         </script>
@@ -77,8 +79,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // Verificar se já existe algum usuário admin
-    await connectToDatabase();
-    const existingAdmin = await User.findOne({ isAdmin: true });
+    await connectDB();
+    const UserModel = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+      email: { type: String, required: true, unique: true },
+      password: { type: String, required: true },
+      isAdmin: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now }
+    }));
+    
+    const existingAdmin = await UserModel.findOne({ isAdmin: true });
     
     if (existingAdmin) {
       return NextResponse.json(
@@ -101,7 +110,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Criar usuário admin
-    const newAdmin = await User.create({
+    const newAdmin = await UserModel.create({
       email,
       password: hashedPassword,
       isAdmin: true
@@ -115,7 +124,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Erro ao criar admin:', error);
     return NextResponse.json(
-      { error: 'Erro ao criar admin' },
+      { error: `Erro ao criar admin: ${error.message || error}` },
       { status: 500 }
     );
   }
