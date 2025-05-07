@@ -1,7 +1,19 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, DefaultSession } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      isAdmin: boolean;
+    } & DefaultSession['user'];
+  }
+
+  interface User {
+    isAdmin: boolean;
+  }
+}
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { User } from '@/models/User';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 
 export const authOptions: NextAuthOptions = {
@@ -19,7 +31,14 @@ export const authOptions: NextAuthOptions = {
 
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email });
+        const UserModel = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+          email: { type: String, required: true, unique: true },
+          password: { type: String, required: true },
+          isAdmin: { type: Boolean, default: false },
+          createdAt: { type: Date, default: Date.now }
+        }));
+
+        const user = await UserModel.findOne({ email: credentials.email });
         
         if (!user || !user.password) {
           throw new Error('Usuário não encontrado');
