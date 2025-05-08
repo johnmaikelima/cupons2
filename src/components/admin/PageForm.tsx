@@ -141,12 +141,28 @@ export default function PageForm({ initialData }: PageFormProps) {
                     plugins: [
                       'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                       'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+                      'quickbars', 'emoticons'
                     ],
                     toolbar: 'undo redo | blocks | ' +
-                      'bold italic forecolor | alignleft aligncenter ' +
+                      'bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter ' +
                       'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | help',
+                      'removeformat | table link image media emoticons | help',
+                    quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+                    toolbar_mode: 'sliding',
+                    contextmenu: 'link image table',
+                    content_css: [
+                      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+                    ],
+                    font_family_formats: 'Inter=Inter,-apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;',
+                    style_formats: [
+                      { title: 'Título 1', format: 'h1' },
+                      { title: 'Título 2', format: 'h2' },
+                      { title: 'Título 3', format: 'h3' },
+                      { title: 'Parágrafo', format: 'p' },
+                      { title: 'Citação', format: 'blockquote' },
+                      { title: 'Código', format: 'code' },
+                    ],
                     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
                   }}
                   value={field.value}
