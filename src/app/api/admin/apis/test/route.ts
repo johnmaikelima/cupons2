@@ -61,17 +61,28 @@ export async function GET() {
         // Gerar slug apenas com o nome da loja
         const slug = slugify(storeData.name, { lower: true, strict: true });
         
+        // Primeiro, verifica se a loja já existe
+        let existingStore = await Store.findOne({ externalId, provider: 'lomadee' });
+        
+        // Prepara os dados para atualização
+        const updateData = {
+          name: storeData.name,
+          active: true,
+          provider: 'lomadee',
+          externalId: externalId,
+          affiliateLink: storeData.affiliateLink,
+          slug: slug
+        };
+
+        // Se a loja não existe OU se existe mas não tem logo, então usa a logo da API
+        if (!existingStore || !existingStore.logo) {
+          updateData.logo = storeData.image;
+        }
+
+        // Atualiza ou cria a loja
         const store = await Store.findOneAndUpdate(
           { externalId, provider: 'lomadee' },
-          {
-            name: storeData.name,
-            logo: storeData.image,
-            active: true,
-            provider: 'lomadee',
-            externalId: externalId,
-            affiliateLink: storeData.affiliateLink,
-            slug: slug
-          },
+          updateData,
           { upsert: true, new: true }
         );
         savedStores.set(externalId, store);
