@@ -6,7 +6,7 @@ import slugify from 'slugify';
 
 const API_URL = 'https://api.lomadee.com/v2';
 const APP_TOKEN = '17457627443735fab3c6f';
-const SOURCE_ID = '37850948';
+const SOURCE_ID = '38359488';
 
 export async function GET() {
   try {
