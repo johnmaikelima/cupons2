@@ -95,3 +95,8 @@ if (mongoose.models.Coupon) {
 
 // Cria o modelo
 export const Coupon = mongoose.model('Coupon', couponSchema);
+
+// Remove o índice problemático
+Coupon.collection.dropIndex('externalId_1_provider_1')
+  .then(() => console.log('Índice removido com sucesso'))
+  .catch(() => console.log('Não foi possível remover o índice ou ele não existe'));
