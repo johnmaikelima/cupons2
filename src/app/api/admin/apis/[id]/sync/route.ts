@@ -52,17 +52,6 @@ export async function POST(
       sourceId: api.sourceId
     });
 
-    // Usar as credenciais que funcionam no teste
-    const testAppToken = '17457627443735fab3c6f';
-    const testSourceId = '38041897';
-
-    if (api.appToken !== testAppToken || api.sourceId !== testSourceId) {
-      console.warn('⚠️ As credenciais são diferentes das que funcionam no teste:', {
-        appTokenDiff: api.appToken !== testAppToken,
-        sourceIdDiff: api.sourceId !== testSourceId
-      });
-    }
-
     const lomadee = new LomadeeService(api.appToken, api.sourceId);
 
     // Primeiro, buscar e salvar todas as lojas
