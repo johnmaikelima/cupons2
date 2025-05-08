@@ -22,6 +22,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        {/* Lomadee Verification */}
+        <meta name="lomadee-verification" content="22720784" />
+
         <script
           src={`https://widget.cloudinary.com/v2.0/global/all.js`}
           async
