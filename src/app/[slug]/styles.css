@@ -8,7 +8,7 @@
   }
 
   .page-content h1 {
-    @apply text-4xl font-bold mb-8;
+    @apply text-4xl font-bold mb-6;
   }
 
   .page-content h2 {
