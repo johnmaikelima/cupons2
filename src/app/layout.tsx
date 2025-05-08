@@ -26,6 +26,21 @@ export default function RootLayout({
           src={`https://widget.cloudinary.com/v2.0/global/all.js`}
           async
         />
+        {/* Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-9Q1684JPLX"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-9Q1684JPLX');
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <AuthProvider>
