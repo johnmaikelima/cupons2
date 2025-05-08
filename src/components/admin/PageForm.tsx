@@ -141,22 +141,13 @@ export default function PageForm({ initialData }: PageFormProps) {
                     plugins: [
                       'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                       'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                      'quickbars'
+                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
                     ],
-                    toolbar: 'formatselect | ' +
-                      'bold italic underline | forecolor backcolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                    toolbar: 'blocks | ' +
+                      'bold italic underline | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist | ' +
                       'link image table | removeformat',
-                    block_formats: 'Título 1=h1;Título 2=h2;Título 3=h3;Parágrafo=p;Citação=blockquote;Pré-formatado=pre',
-                    formats: {
-                      h1: { block: 'h1', classes: 'text-4xl font-bold mb-6' },
-                      h2: { block: 'h2', classes: 'text-3xl font-semibold mt-8 mb-4' },
-                      h3: { block: 'h3', classes: 'text-2xl font-semibold mt-6 mb-3' },
-                      p: { block: 'p', classes: 'mb-4' },
-                      blockquote: { block: 'blockquote', classes: 'border-l-4 border-gray-300 pl-4 italic my-4' },
-                      pre: { block: 'pre', classes: 'bg-gray-100 p-4 rounded-lg my-4' }
-                    },
+                    block_formats: 'Título 1=h1;Título 2=h2;Título 3=h3;Parágrafo=p;Citação=blockquote',
                     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
                   }}
                   value={field.value}
