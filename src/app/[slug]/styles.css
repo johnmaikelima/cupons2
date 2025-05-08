@@ -1,66 +1,108 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+.page-content {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
 
-@layer components {
-  .page-content {
-    @apply prose prose-lg mx-auto;
-  }
+.page-content h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: #111827;
+}
 
-  .page-content h1 {
-    @apply text-4xl font-bold mb-6;
-  }
+.page-content h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
 
-  .page-content h2 {
-    @apply text-3xl font-semibold mt-8 mb-4;
-  }
+.page-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
 
-  .page-content h3 {
-    @apply text-2xl font-semibold mt-6 mb-3;
-  }
+.page-content p {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  margin-bottom: 1rem;
+  color: #4b5563;
+}
 
-  .page-content p {
-    @apply mb-4;
-  }
+.page-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
 
-  .page-content ul {
-    @apply list-disc pl-6 mb-4;
-  }
+.page-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
 
-  .page-content ol {
-    @apply list-decimal pl-6 mb-4;
-  }
+.page-content li {
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+}
 
-  .page-content a {
-    @apply text-blue-600 hover:underline;
-  }
+.page-content blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #6b7280;
+}
 
-  .page-content img {
-    @apply rounded-lg shadow-md my-4;
-  }
+.page-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
 
-  .page-content blockquote {
-    @apply border-l-4 border-gray-300 pl-4 italic my-4;
-  }
+.page-content a:hover {
+  color: #1d4ed8;
+}
 
-  .page-content pre {
-    @apply bg-gray-100 p-4 rounded-lg my-4;
-  }
+.page-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+}
 
-  .page-content code {
-    @apply bg-gray-100 px-1 py-0.5 rounded;
-  }
+.page-content pre {
+  background-color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
 
-  .page-content table {
-    @apply w-full border-collapse my-4;
-  }
+.page-content code {
+  font-family: monospace;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
 
-  .page-content th,
-  .page-content td {
-    @apply border border-gray-300 px-4 py-2;
-  }
+.page-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
 
-  .page-content th {
-    @apply bg-gray-100;
-  }
+.page-content th,
+.page-content td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+}
+
+.page-content th {
+  background-color: #f9fafb;
+  font-weight: 600;
 }

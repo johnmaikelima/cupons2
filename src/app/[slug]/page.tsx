@@ -1,5 +1,7 @@
 'use client';
 
+import './styles.css';
+
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 
@@ -44,8 +46,8 @@ export default function DynamicPage({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <article className="page-content max-w-4xl mx-auto">
+    <div>
+      <article className="page-content">
         <h1>{page.title}</h1>
         <div dangerouslySetInnerHTML={{ __html: page.content }} />
       </article>
