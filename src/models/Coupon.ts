@@ -59,7 +59,7 @@ const couponSchema = new mongoose.Schema({
 
 // Índices
 couponSchema.index({ provider: 1 });
-couponSchema.index({ externalId: 1, provider: 1 }, { sparse: true }); // Removido unique para permitir múltiplos cupons manuais
+// Removido índice composto que estava causando problemas
 couponSchema.index({ active: 1 });
 couponSchema.index({ expiresAt: 1 });
 couponSchema.index({ store: 1 });
