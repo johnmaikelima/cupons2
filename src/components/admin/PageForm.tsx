@@ -146,8 +146,17 @@ export default function PageForm({ initialData }: PageFormProps) {
                     toolbar: 'blocks | ' +
                       'bold italic underline | alignleft aligncenter ' +
                       'alignright alignjustify | bullist numlist | ' +
-                      'link image table | removeformat',
+                      'link image table | removeformat | ofertas',
                     block_formats: 'Título 1=h1;Título 2=h2;Título 3=h3;Parágrafo=p;Citação=blockquote',
+                    extended_valid_elements: 'div[id|class|style]',
+                    setup: (editor) => {
+                      editor.ui.registry.addButton('ofertas', {
+                        text: 'Inserir Ofertas',
+                        onAction: () => {
+                          editor.insertContent('<div id="ofertas-dinamicas"></div>');
+                        }
+                      });
+                    },
                     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
                   }}
                   value={field.value}
