@@ -9,7 +9,7 @@ interface Offer {
 class DynamicOffers {
   private readonly appToken = '1746388081270978c0396';
   private readonly sourceId = '38359488';
-  private readonly apiUrl = 'http://sandbox-api.lomadee.com/v3';
+  private readonly apiUrl = 'https://api.lomadee.com/v3';
 
   async fetchOffers(keyword: string, size: number = 5): Promise<Offer[]> {
     try {
@@ -17,7 +17,15 @@ class DynamicOffers {
       const response = await fetch(url);
       const data = await response.json();
 
+      console.log('API Response:', data);
+      
+      if (data.requestInfo?.status === 'PERMISSION_DENIED') {
+        console.error('Erro de permissão:', data.requestInfo.message);
+        throw new Error(`Erro de permissão: ${data.requestInfo.message}`);
+      }
+
       if (!data.offers || !Array.isArray(data.offers)) {
+        console.log('Nenhuma oferta encontrada nos dados:', data);
         return [];
       }
 
