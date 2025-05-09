@@ -3,6 +3,7 @@
 import './styles.css';
 
 import { useEffect, useState } from 'react';
+import { dynamicOffers } from '@/lib/dynamicOffers';
 import { notFound } from 'next/navigation';
 
 interface PageData {
@@ -14,24 +15,30 @@ export default function DynamicPage({ params }: { params: { slug: string } }) {
   const [page, setPage] = useState<PageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadPage() {
-      try {
-        const response = await fetch(`/api/pages/${params.slug}`);
-        if (!response.ok) {
-          throw new Error('Página não encontrada');
-        }
-        const data = await response.json();
-        setPage(data);
-      } catch (error) {
-        notFound();
-      } finally {
-        setIsLoading(false);
+  async function fetchPage() {
+    try {
+      const response = await fetch(`/api/pages/${params.slug}`);
+      if (!response.ok) {
+        throw new Error('Página não encontrada');
       }
+      const data = await response.json();
+      setPage(data);
+    } catch (error) {
+      notFound();
+    } finally {
+      setIsLoading(false);
     }
+  }
 
-    loadPage();
-  }, [params.slug]);
+  useEffect(() => {
+    fetchPage();
+  }, []);
+
+  useEffect(() => {
+    if (page) {
+      dynamicOffers.renderOffers();
+    }
+  }, [page]);
 
   if (isLoading) {
     return (
