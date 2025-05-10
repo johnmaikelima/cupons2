@@ -62,21 +62,15 @@ class DynamicOffers {
         return;
       }
 
-      const sortedOffers = [...offers].sort((a, b) => a.price - b.price);
-      const minPrice = Math.floor(sortedOffers[0]?.price || 0);
-      const maxPrice = Math.ceil(sortedOffers[sortedOffers.length - 1]?.price || 0);
-
-      const filterHtml = `
-        <div class="offers-filter">
-          <label for="price-range">Filtrar por preço: R$ <span id="price-value">${maxPrice}</span></label>
-          <input 
-            type="range" 
-            id="price-range" 
-            min="${minPrice}" 
-            max="${maxPrice}" 
-            value="${maxPrice}"
-            step="1"
-          />
+      const sortHtml = `
+        <div class="offers-sort">
+          <label>
+            <input 
+              type="checkbox" 
+              id="sort-price"
+            />
+            Ordenar por menor preço
+          </label>
         </div>
       `;
 
@@ -100,22 +94,24 @@ class DynamicOffers {
 
       container.innerHTML = `
         <style>
-          .offers-filter {
+          .offers-sort {
             background: white;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
-          .offers-filter label {
-            display: block;
-            margin-bottom: 1rem;
+          .offers-sort label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             font-weight: 500;
             color: #374151;
+            cursor: pointer;
           }
-          .offers-filter input[type="range"] {
-            width: 100%;
-            margin: 0;
+          .offers-sort input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
           }
           .offers-grid {
             display: grid;
@@ -172,12 +168,12 @@ class DynamicOffers {
             font-weight: 500;
             color: #111827;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             margin-bottom: 0.75rem;
-            line-height: 1.4;
-            height: 3.6em;
+            line-height: 1.2;
+            height: 2.4em;
           }
           .offer-price-action {
             display: flex;
@@ -234,25 +230,26 @@ class DynamicOffers {
             }
           }
         </style>
-        ${filterHtml}
+        ${sortHtml}
         <div class="offers-grid">
           ${offersHtml}
         </div>
         <script>
           (function() {
-            const range = document.getElementById('price-range');
-            const value = document.getElementById('price-value');
-            const cards = document.querySelectorAll('.offer-card');
+            const checkbox = document.getElementById('sort-price');
+            const grid = document.querySelector('.offers-grid');
+            const cards = Array.from(document.querySelectorAll('.offer-card'));
 
-            if (range && value) {
-              range.addEventListener('input', (e) => {
-                const maxPrice = e.target.value;
-                value.textContent = maxPrice;
-
-                cards.forEach(card => {
-                  const price = parseFloat(card.dataset.price);
-                  card.style.display = price <= maxPrice ? 'block' : 'none';
+            if (checkbox && grid) {
+              checkbox.addEventListener('change', () => {
+                const sortedCards = cards.sort((a, b) => {
+                  const priceA = parseFloat(a.dataset.price);
+                  const priceB = parseFloat(b.dataset.price);
+                  return checkbox.checked ? priceA - priceB : 0;
                 });
+
+                grid.innerHTML = '';
+                sortedCards.forEach(card => grid.appendChild(card));
               });
             }
           })();
