@@ -27,10 +27,12 @@ class DynamicOffers {
   };
 
   private async fetchLomadeeOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    console.log('Buscando ofertas Lomadee para:', keyword);
     const size = this.pageSize;
     const offset = (page - 1) * size;
     try {
       const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${size}&offset=${offset}`;
+      console.log('URL Lomadee:', url);
       const response = await fetch(url);
       const data = await response.json();
 
@@ -42,7 +44,7 @@ class DynamicOffers {
       }
 
       if (!data.offers || !Array.isArray(data.offers)) {
-        console.log('Nenhuma oferta encontrada nos dados:', data);
+        console.log('Nenhuma oferta encontrada na Lomadee');
         return [];
       }
 
@@ -60,6 +62,7 @@ class DynamicOffers {
   }
 
   private async fetchAmazonOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    console.log('Buscando ofertas Amazon para:', keyword);
     try {
       const { credentials } = await import('../config/credentials');
       const timestamp = new Date().toISOString();
@@ -82,13 +85,15 @@ class DynamicOffers {
         'Marketplace': 'www.amazon.com.br'
       };
 
+      console.log('Parâmetros Amazon:', params);
+      const authHeader = await this.getAmazonAuthHeader(params, timestamp, credentials);
       const response = await fetch(`https://${host}${uri}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Amz-Target': 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems',
           'X-Amz-Date': timestamp,
-          'Authorization': this.getAmazonAuthHeader(params, timestamp, credentials)
+          'Authorization': authHeader
         },
         body: JSON.stringify(params)
       });
@@ -98,6 +103,7 @@ class DynamicOffers {
       }
 
       const data = await response.json();
+      console.log('Resposta Amazon:', data);
       const items = data?.SearchResult?.Items || [];
 
       // Atualiza informações de paginação
@@ -119,7 +125,7 @@ class DynamicOffers {
     }
   }
 
-  private getAmazonAuthHeader(params: any, timestamp: string, credentials: any): string {
+  private async getAmazonAuthHeader(params: any, timestamp: string, credentials: any): Promise<string> {
     const algorithm = 'AWS4-HMAC-SHA256';
     const service = 'ProductAdvertisingAPI';
     const region = 'us-east-1';
@@ -138,7 +144,7 @@ class DynamicOffers {
     ].join('\n') + '\n';
 
     const signedHeaders = 'content-type;host;x-amz-date;x-amz-target';
-    const payloadHash = this.sha256(JSON.stringify(params));
+    const payloadHash = await this.sha256(JSON.stringify(params));
 
     const canonicalRequest = [
       httpMethod,
@@ -153,19 +159,19 @@ class DynamicOffers {
       algorithm,
       timestamp,
       scope,
-      this.sha256(canonicalRequest)
+      await this.sha256(canonicalRequest)
     ].join('\n');
 
-    const kDate = this.hmacSHA256('AWS4' + credentials.amazon.secretKey, dateStamp);
-    const kRegion = this.hmacSHA256(kDate, region);
-    const kService = this.hmacSHA256(kRegion, service);
-    const kSigning = this.hmacSHA256(kService, 'aws4_request');
-    const signature = this.hmacSHA256(kSigning, stringToSign);
+    const kDate = await this.hmacSHA256('AWS4' + credentials.amazon.secretKey, dateStamp);
+    const kRegion = await this.hmacSHA256(kDate, region);
+    const kService = await this.hmacSHA256(kRegion, service);
+    const kSigning = await this.hmacSHA256(kService, 'aws4_request');
+    const signature = await this.hmacSHA256(kSigning, stringToSign);
 
     return `${algorithm} Credential=${credentials.amazon.accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
   }
 
-  private sha256(message: string): string {
+  private async sha256(message: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(message);
     return crypto.subtle.digest('SHA-256', data)
@@ -174,7 +180,7 @@ class DynamicOffers {
         .join(''));
   }
 
-  private hmacSHA256(key: string, message: string): string {
+  private async hmacSHA256(key: string, message: string): Promise<string> {
     const encoder = new TextEncoder();
     const keyData = encoder.encode(key);
     const messageData = encoder.encode(message);
@@ -216,13 +222,16 @@ class DynamicOffers {
     try {
       // Busca ofertas de todas as APIs em paralelo
       this.currentPage = page;
+      console.log('Iniciando busca em todas as APIs. Página:', page);
       const [lomadeeOffers, amazonOffers] = await Promise.all([
         this.fetchLomadeeOffers(keyword, page),
         this.fetchAmazonOffers(keyword, page)
       ]);
 
       // Combina os resultados
-      return [...lomadeeOffers, ...amazonOffers];
+      const allOffers = [...lomadeeOffers, ...amazonOffers];
+      console.log('Total de ofertas encontradas:', allOffers.length);
+      return allOffers;
     } catch (error) {
       console.error('Erro ao buscar todas as ofertas:', error);
       return [];
@@ -255,6 +264,17 @@ class DynamicOffers {
     `).join('');
   }
 
+  private getSearchKeyword(): string {
+    const url = new URL(window.location.href);
+    const path = url.pathname;
+    const categoria = path.split('/').pop() || '';
+    
+    // Remove hífens e converte para espaço
+    const keyword = decodeURIComponent(categoria.replace(/-/g, ' '));
+    console.log('Palavra-chave de busca:', keyword);
+    return keyword;
+  }
+
   async renderOffers(containerId: string = 'ofertas-dinamicas'): Promise<void> {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -268,8 +288,10 @@ class DynamicOffers {
     }
 
     try {
+      const keyword = this.getSearchKeyword();
       const page = Number(new URLSearchParams(window.location.search).get('page')) || 1;
-      const offers = await this.fetchAllOffers(categoria, page);
+      const offers = await this.fetchAllOffers(keyword, page);
+      console.log('Ofertas encontradas:', offers.length);
       
       if (offers.length === 0) {
         container.innerHTML = '<p class="no-offers">Nenhuma oferta encontrada.</p>';
