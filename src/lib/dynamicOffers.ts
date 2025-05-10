@@ -1,3 +1,10 @@
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 interface Offer {
   name: string;
   thumbnail: string;
@@ -7,13 +14,23 @@ interface Offer {
 }
 
 class DynamicOffers {
-  private readonly appToken = '1746388081270978c0396';
+  private readonly appToken = '16632982759641319bf7c241087e7a43';
   private readonly sourceId = '38359488';
   private readonly apiUrl = 'https://api.lomadee.com/v3';
+  private readonly pageSize = 12;
+  private currentPage = 1;
+  private paginationInfo: PaginationInfo = {
+    currentPage: 1,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false
+  };
 
-  async fetchOffers(keyword: string, size: number = 12): Promise<Offer[]> {
+  private async fetchLomadeeOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    const size = this.pageSize;
+    const offset = (page - 1) * size;
     try {
-      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${size}`;
+      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${size}&offset=${offset}`;
       const response = await fetch(url);
       const data = await response.json();
 
@@ -42,9 +59,94 @@ class DynamicOffers {
     }
   }
 
+  private async fetchAmazonOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    try {
+      const { credentials } = await import('../config/credentials');
+      const { ProductAdvertisingAPIv1 } = require('paapi5-nodejs-sdk');
+
+      const client = new ProductAdvertisingAPIv1({
+        accessKey: credentials.amazon.accessKey,
+        secretKey: credentials.amazon.secretKey,
+        region: 'us-east-1',
+        host: credentials.amazon.marketplace
+      });
+
+      const params = {
+        Keywords: keyword,
+        SearchIndex: 'All',
+        ItemCount: this.pageSize,
+        ItemPage: page,
+        Resources: [
+          'ItemInfo.Title',
+          'Offers.Listings.Price',
+          'Images.Primary.Large'
+        ],
+        PartnerTag: credentials.amazon.partnerId,
+        PartnerType: 'Associates'
+      };
+
+      const response = await client.searchItems(params);
+      const items = response?.SearchResult?.Items || [];
+
+      // Atualiza informações de paginação
+      const totalResults = response?.SearchResult?.TotalResultCount || 0;
+      this.paginationInfo.totalPages = Math.ceil(totalResults / this.pageSize);
+      this.paginationInfo.hasNextPage = page < this.paginationInfo.totalPages;
+      this.paginationInfo.hasPreviousPage = page > 1;
+
+      return items.map(item => ({
+        name: item.ItemInfo.Title.DisplayValue,
+        thumbnail: item.Images.Primary.Large.URL,
+        price: item.Offers?.Listings[0]?.Price?.Amount || 0,
+        link: item.DetailPageURL,
+        storeName: 'Amazon'
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar ofertas da Amazon:', error);
+      return [];
+    }
+  }
+
+  private async fetchPartnerOffers(keyword: string): Promise<Offer[]> {
+    try {
+      // Substitua pela URL da sua API parceira
+      const response = await fetch(`https://api.parceiro.com/products?q=${encodeURIComponent(keyword)}`);
+      const data = await response.json();
+
+      // Adapte o formato dos dados para o formato Offer[]
+      return data.products.map((product: any) => ({
+        name: product.title,
+        thumbnail: product.image,
+        price: product.price,
+        link: product.url,
+        storeName: product.store
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar ofertas do parceiro:', error);
+      return [];
+    }
+  }
+
+  private async fetchAllOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    try {
+      // Busca ofertas de todas as APIs em paralelo
+      this.currentPage = page;
+      const [lomadeeOffers, amazonOffers] = await Promise.all([
+        this.fetchLomadeeOffers(keyword, page),
+        this.fetchAmazonOffers(keyword, page)
+      ]);
+
+      // Combina os resultados
+      return [...lomadeeOffers, ...amazonOffers];
+    } catch (error) {
+      console.error('Erro ao buscar todas as ofertas:', error);
+      return [];
+    }
+  }
+
   private sortOffers(offers: Offer[], ascending: boolean = true): Offer[] {
     return [...offers].sort((a, b) => {
-      return ascending ? a.price - b.price : 0;
+      return ascending ? a.price - b.price : b.price - a.price;
     });
   }
 
@@ -81,7 +183,8 @@ class DynamicOffers {
     }
 
     try {
-      const offers = await this.fetchOffers(categoria);
+      const page = Number(new URLSearchParams(window.location.search).get('page')) || 1;
+      const offers = await this.fetchAllOffers(categoria, page);
       
       if (offers.length === 0) {
         container.innerHTML = '<p class="no-offers">Nenhuma oferta encontrada.</p>';
@@ -99,6 +202,15 @@ class DynamicOffers {
             />
             Ordenar por menor preço
           </label>
+        </div>
+        <div class="offers-pagination">
+          ${this.paginationInfo.hasPreviousPage ? `
+            <a href="?page=${this.currentPage - 1}" class="pagination-link">← Anterior</a>
+          ` : ''}
+          <span class="pagination-info">Página ${this.currentPage} de ${this.paginationInfo.totalPages}</span>
+          ${this.paginationInfo.hasNextPage ? `
+            <a href="?page=${this.currentPage + 1}" class="pagination-link">Próxima →</a>
+          ` : ''}
         </div>
       `;
 
@@ -212,6 +324,33 @@ class DynamicOffers {
             border: none;
             cursor: pointer;
           }
+          .offers-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1rem;
+          }
+
+          .pagination-link {
+            color: #1D4FD9;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid #1D4FD9;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+          }
+
+          .pagination-link:hover {
+            background: #1D4FD9;
+            color: white;
+          }
+
+          .pagination-info {
+            color: #374151;
+          }
+
           .offer-link:hover {
             background-color: #1644B8;
             transform: scale(1.05);
