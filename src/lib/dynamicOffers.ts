@@ -14,14 +14,14 @@ interface Offer {
 }
 
 class DynamicOffers {
-  private readonly appToken = '16632982759641319bf7c241087e7a43';
+  private readonly appToken = '1746388081270978c0396';
   private readonly sourceId = '38359488';
   private readonly apiUrl = 'https://api.lomadee.com/v3';
   private readonly pageSize = 12;
 
   constructor(
     apiUrl: string = 'https://api.lomadee.com/v3',
-    appToken: string = '16632982759641319bf7c241087e7a43',
+    appToken: string = '1746388081270978c0396',
     sourceId: string = '38359488',
     pageSize: number = 12
   ) {
