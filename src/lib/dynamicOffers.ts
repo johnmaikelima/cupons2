@@ -14,18 +14,10 @@ interface Offer {
 }
 
 class DynamicOffers {
-  private readonly apiUrl: string;
-  private readonly appToken: string;
-  private readonly sourceId: string;
-  private readonly pageSize: number;
-
-  private currentPage = 1;
-  private paginationInfo: PaginationInfo = {
-    currentPage: 1,
-    totalPages: 1,
-    hasNextPage: false,
-    hasPreviousPage: false
-  };
+  private readonly appToken = '16632982759641319bf7c241087e7a43';
+  private readonly sourceId = '38359488';
+  private readonly apiUrl = 'https://api.lomadee.com/v3';
+  private readonly pageSize = 12;
 
   constructor(
     apiUrl: string = 'https://api.lomadee.com/v3',
@@ -39,25 +31,9 @@ class DynamicOffers {
     this.pageSize = pageSize;
   }
 
-  private async fetchLomadeeOffers(keyword: string, page: number = 1): Promise<Offer[]> {
-    if (!this.apiUrl || !this.appToken || !this.sourceId) {
-      console.error('Configurações da Lomadee ausentes:', {
-        apiUrl: !!this.apiUrl,
-        appToken: !!this.appToken,
-        sourceId: !!this.sourceId
-      });
-      return [];
-    }
-    console.log('Buscando ofertas Lomadee para:', keyword);
-    if (!keyword) {
-      console.log('Keyword vazia, retornando array vazio');
-      return [];
-    }
-    const size = this.pageSize;
-    const offset = (page - 1) * size;
+  private async fetchLomadeeOffers(keyword: string): Promise<Offer[]> {
     try {
-      const encodedKeyword = encodeURIComponent(keyword);
-      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodedKeyword}&size=${size}&page=${page}`;
+      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${this.pageSize}`;
       console.log('URL completa Lomadee:', url);
       console.log('URL Lomadee:', url);
       const response = await fetch(url);
@@ -91,7 +67,7 @@ class DynamicOffers {
     }
   }
 
-  private async fetchAmazonOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+  private async fetchAmazonOffers(keyword: string): Promise<Offer[]> {
     console.log('Buscando ofertas Amazon para:', keyword);
     try {
       const { credentials } = await import('../config/credentials');
@@ -104,7 +80,7 @@ class DynamicOffers {
         'Keywords': keyword,
         'SearchIndex': 'All',
         'ItemCount': this.pageSize,
-        'ItemPage': page,
+        'ItemPage': 1,
         'Resources': [
           'ItemInfo.Title',
           'Offers.Listings.Price',
@@ -140,12 +116,6 @@ class DynamicOffers {
         data
       });
       const items = data?.SearchResult?.Items || [];
-
-      // Atualiza informações de paginação
-      const totalResults = data?.SearchResult?.TotalResultCount || 0;
-      this.paginationInfo.totalPages = Math.ceil(totalResults / this.pageSize);
-      this.paginationInfo.hasNextPage = page < this.paginationInfo.totalPages;
-      this.paginationInfo.hasPreviousPage = page > 1;
 
       return items.map(item => ({
         name: item.ItemInfo.Title.DisplayValue,
@@ -253,20 +223,10 @@ class DynamicOffers {
     }
   }
 
-  private async fetchAllOffers(keyword: string, page: number = 1): Promise<Offer[]> {
-    console.log('fetchAllOffers - keyword:', keyword, 'page:', page);
+  private async fetchAllOffers(keyword: string): Promise<Offer[]> {
     try {
-      // Busca ofertas de todas as APIs em paralelo
-      this.currentPage = page;
-      console.log('Iniciando busca em todas as APIs. Página:', page);
-      // Por enquanto, busca apenas da Lomadee
-      const lomadeeOffers = await this.fetchLomadeeOffers(keyword, page);
-      console.log('Ofertas Lomadee:', lomadeeOffers.length);
-      const allOffers = lomadeeOffers;
-
-
-      console.log('Total de ofertas encontradas:', allOffers.length);
-      return allOffers;
+      const lomadeeOffers = await this.fetchLomadeeOffers(keyword);
+      return lomadeeOffers;
     } catch (error) {
       console.error('Erro ao buscar todas as ofertas:', error);
       return [];
@@ -300,67 +260,25 @@ class DynamicOffers {
   }
 
   private getSearchKeyword(): string {
-    if (typeof window === 'undefined') {
-      console.log('window não definido (servidor)');
-      return '';
-    }
     const url = new URL(window.location.href);
     const path = url.pathname;
     const categoria = path.split('/').pop() || '';
-    
-    // Remove hífens e converte para espaço
-    const keyword = decodeURIComponent(categoria.replace(/-/g, ' '));
-    console.log('Palavra-chave de busca:', keyword);
-    return keyword;
+    return decodeURIComponent(categoria.replace(/-/g, ' '));
   }
 
   async renderOffers(containerId: string = 'ofertas-dinamicas'): Promise<void> {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const categoria = urlParams.get('categoria');
-    
-    if (!categoria) {
-      container.style.display = 'none';
-      return;
-    }
+    const keyword = this.getSearchKeyword();
 
     try {
-      const keyword = this.getSearchKeyword();
-      const page = Number(new URLSearchParams(window.location.search).get('page')) || 1;
-      const offers = await this.fetchAllOffers(keyword, page);
-      console.log('Ofertas encontradas:', offers.length);
+      const offers = await this.fetchAllOffers(keyword);
       
       if (offers.length === 0) {
         container.innerHTML = '<p class="no-offers">Nenhuma oferta encontrada.</p>';
         return;
       }
-
-      let currentOffers = [...offers];
-      
-      const sortHtml = `
-        <div class="offers-sort">
-          <label>
-            <input 
-              type="checkbox" 
-              id="sort-price"
-            />
-            Ordenar por menor preço
-          </label>
-        </div>
-        <div class="offers-pagination">
-          ${this.paginationInfo.hasPreviousPage ? `
-            <a href="?page=${this.currentPage - 1}" class="pagination-link">← Anterior</a>
-          ` : ''}
-          <span class="pagination-info">Página ${this.currentPage} de ${this.paginationInfo.totalPages}</span>
-          ${this.paginationInfo.hasNextPage ? `
-            <a href="?page=${this.currentPage + 1}" class="pagination-link">Próxima →</a>
-          ` : ''}
-        </div>
-      `;
-
-      const offersHtml = this.renderOffersHtml(offers);
 
       container.innerHTML = `
         <style>
