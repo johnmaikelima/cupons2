@@ -28,9 +28,9 @@ class DynamicOffers {
   };
 
   constructor(
-    apiUrl: string = 'https://api.lomadee.com/v2',
-    appToken: string = '1686753633183c3b8.40011262',
-    sourceId: string = '37905839',
+    apiUrl: string = 'https://api.lomadee.com/v3',
+    appToken: string = '16632982759641319bf7c241087e7a43',
+    sourceId: string = '38359488',
     pageSize: number = 12
   ) {
     this.apiUrl = apiUrl;
@@ -57,7 +57,7 @@ class DynamicOffers {
     const offset = (page - 1) * size;
     try {
       const encodedKeyword = encodeURIComponent(keyword);
-      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodedKeyword}&size=${size}&offset=${offset}`;
+      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodedKeyword}&size=${size}&page=${page}`;
       console.log('URL completa Lomadee:', url);
       console.log('URL Lomadee:', url);
       const response = await fetch(url);
@@ -259,24 +259,10 @@ class DynamicOffers {
       // Busca ofertas de todas as APIs em paralelo
       this.currentPage = page;
       console.log('Iniciando busca em todas as APIs. Página:', page);
-      // Busca primeiro da Lomadee que é mais confiável
+      // Por enquanto, busca apenas da Lomadee
       const lomadeeOffers = await this.fetchLomadeeOffers(keyword, page);
       console.log('Ofertas Lomadee:', lomadeeOffers.length);
-
-      // Tenta buscar da Amazon, mas não bloqueia se falhar
-      let amazonOffers: Offer[] = [];
-      try {
-        amazonOffers = await this.fetchAmazonOffers(keyword, page);
-        console.log('Ofertas Amazon:', amazonOffers.length);
-      } catch (error) {
-        console.error('Erro ao buscar ofertas da Amazon:', error);
-      }
-
-      // Combina os resultados
-      const allOffers = [...lomadeeOffers];
-      if (amazonOffers.length > 0) {
-        allOffers.push(...amazonOffers);
-      }
+      const allOffers = lomadeeOffers;
 
 
       console.log('Total de ofertas encontradas:', allOffers.length);
