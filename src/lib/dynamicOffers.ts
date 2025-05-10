@@ -28,6 +28,10 @@ class DynamicOffers {
 
   private async fetchLomadeeOffers(keyword: string, page: number = 1): Promise<Offer[]> {
     console.log('Buscando ofertas Lomadee para:', keyword);
+    if (!keyword) {
+      console.log('Keyword vazia, retornando array vazio');
+      return [];
+    }
     const size = this.pageSize;
     const offset = (page - 1) * size;
     try {
@@ -219,17 +223,31 @@ class DynamicOffers {
   }
 
   private async fetchAllOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    console.log('fetchAllOffers - keyword:', keyword, 'page:', page);
     try {
       // Busca ofertas de todas as APIs em paralelo
       this.currentPage = page;
       console.log('Iniciando busca em todas as APIs. Página:', page);
-      const [lomadeeOffers, amazonOffers] = await Promise.all([
-        this.fetchLomadeeOffers(keyword, page),
-        this.fetchAmazonOffers(keyword, page)
-      ]);
+      // Busca primeiro da Lomadee que é mais confiável
+      const lomadeeOffers = await this.fetchLomadeeOffers(keyword, page);
+      console.log('Ofertas Lomadee:', lomadeeOffers.length);
+
+      // Tenta buscar da Amazon, mas não bloqueia se falhar
+      let amazonOffers: Offer[] = [];
+      try {
+        amazonOffers = await this.fetchAmazonOffers(keyword, page);
+        console.log('Ofertas Amazon:', amazonOffers.length);
+      } catch (error) {
+        console.error('Erro ao buscar ofertas da Amazon:', error);
+      }
 
       // Combina os resultados
-      const allOffers = [...lomadeeOffers, ...amazonOffers];
+      const allOffers = [...lomadeeOffers];
+      if (amazonOffers.length > 0) {
+        allOffers.push(...amazonOffers);
+      }
+
+
       console.log('Total de ofertas encontradas:', allOffers.length);
       return allOffers;
     } catch (error) {
@@ -265,6 +283,10 @@ class DynamicOffers {
   }
 
   private getSearchKeyword(): string {
+    if (typeof window === 'undefined') {
+      console.log('window não definido (servidor)');
+      return '';
+    }
     const url = new URL(window.location.href);
     const path = url.pathname;
     const categoria = path.split('/').pop() || '';
