@@ -62,34 +62,46 @@ class DynamicOffers {
   private async fetchAmazonOffers(keyword: string, page: number = 1): Promise<Offer[]> {
     try {
       const { credentials } = await import('../config/credentials');
-      const { ProductAdvertisingAPIv1 } = require('paapi5-nodejs-sdk');
-
-      const client = new ProductAdvertisingAPIv1({
-        accessKey: credentials.amazon.accessKey,
-        secretKey: credentials.amazon.secretKey,
-        region: 'us-east-1',
-        host: credentials.amazon.marketplace
-      });
-
+      const timestamp = new Date().toISOString();
+      const host = 'webservices.amazon.com.br';
+      const region = 'us-east-1';
+      const uri = '/paapi5/searchitems';
+      
       const params = {
-        Keywords: keyword,
-        SearchIndex: 'All',
-        ItemCount: this.pageSize,
-        ItemPage: page,
-        Resources: [
+        'Keywords': keyword,
+        'SearchIndex': 'All',
+        'ItemCount': this.pageSize,
+        'ItemPage': page,
+        'Resources': [
           'ItemInfo.Title',
           'Offers.Listings.Price',
           'Images.Primary.Large'
         ],
-        PartnerTag: credentials.amazon.partnerId,
-        PartnerType: 'Associates'
+        'PartnerTag': credentials.amazon.partnerId,
+        'PartnerType': 'Associates',
+        'Marketplace': 'www.amazon.com.br'
       };
 
-      const response = await client.searchItems(params);
-      const items = response?.SearchResult?.Items || [];
+      const response = await fetch(`https://${host}${uri}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Amz-Target': 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems',
+          'X-Amz-Date': timestamp,
+          'Authorization': this.getAmazonAuthHeader(params, timestamp, credentials)
+        },
+        body: JSON.stringify(params)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Amazon API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items = data?.SearchResult?.Items || [];
 
       // Atualiza informações de paginação
-      const totalResults = response?.SearchResult?.TotalResultCount || 0;
+      const totalResults = data?.SearchResult?.TotalResultCount || 0;
       this.paginationInfo.totalPages = Math.ceil(totalResults / this.pageSize);
       this.paginationInfo.hasNextPage = page < this.paginationInfo.totalPages;
       this.paginationInfo.hasPreviousPage = page > 1;
@@ -105,6 +117,79 @@ class DynamicOffers {
       console.error('Erro ao buscar ofertas da Amazon:', error);
       return [];
     }
+  }
+
+  private getAmazonAuthHeader(params: any, timestamp: string, credentials: any): string {
+    const algorithm = 'AWS4-HMAC-SHA256';
+    const service = 'ProductAdvertisingAPI';
+    const region = 'us-east-1';
+    const httpMethod = 'POST';
+    const canonicalUri = '/paapi5/searchitems';
+    const host = 'webservices.amazon.com.br';
+
+    const dateStamp = timestamp.split('T')[0];
+    const scope = `${dateStamp}/${region}/${service}/aws4_request`;
+
+    const canonicalHeaders = [
+      `content-type:application/json`,
+      `host:${host}`,
+      `x-amz-date:${timestamp}`,
+      `x-amz-target:com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems`
+    ].join('\n') + '\n';
+
+    const signedHeaders = 'content-type;host;x-amz-date;x-amz-target';
+    const payloadHash = this.sha256(JSON.stringify(params));
+
+    const canonicalRequest = [
+      httpMethod,
+      canonicalUri,
+      '',
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join('\n');
+
+    const stringToSign = [
+      algorithm,
+      timestamp,
+      scope,
+      this.sha256(canonicalRequest)
+    ].join('\n');
+
+    const kDate = this.hmacSHA256('AWS4' + credentials.amazon.secretKey, dateStamp);
+    const kRegion = this.hmacSHA256(kDate, region);
+    const kService = this.hmacSHA256(kRegion, service);
+    const kSigning = this.hmacSHA256(kService, 'aws4_request');
+    const signature = this.hmacSHA256(kSigning, stringToSign);
+
+    return `${algorithm} Credential=${credentials.amazon.accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  }
+
+  private sha256(message: string): string {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    return crypto.subtle.digest('SHA-256', data)
+      .then(hash => Array.from(new Uint8Array(hash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join(''));
+  }
+
+  private hmacSHA256(key: string, message: string): string {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(key);
+    const messageData = encoder.encode(message);
+    
+    return crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+    .then(cryptoKey => crypto.subtle.sign('HMAC', cryptoKey, messageData))
+    .then(signature => Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join(''));
   }
 
   private async fetchPartnerOffers(keyword: string): Promise<Offer[]> {
