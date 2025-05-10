@@ -42,6 +42,32 @@ class DynamicOffers {
     }
   }
 
+  private sortOffers(offers: Offer[], ascending: boolean = true): Offer[] {
+    return [...offers].sort((a, b) => {
+      return ascending ? a.price - b.price : 0;
+    });
+  }
+
+  private renderOffersHtml(offers: Offer[]): string {
+    return offers.map(offer => `
+      <div class="offer-card" data-price="${offer.price}">
+        <a href="${offer.link}" target="_blank" rel="noopener noreferrer" class="offer-card-link">
+          <div class="offer-image-wrapper">
+            <img src="${offer.thumbnail}" alt="${offer.name}" class="offer-image" />
+            ${offer.storeName ? `<div class="offer-store-badge">${offer.storeName}</div>` : ''}
+          </div>
+          <div class="offer-content">
+            <h3 class="offer-title">${offer.name}</h3>
+            <div class="offer-price-action">
+              <p class="offer-price">R$ ${offer.price.toFixed(2)}</p>
+              <button class="offer-link">Ver Oferta</button>
+            </div>
+          </div>
+        </a>
+      </div>
+    `).join('');
+  }
+
   async renderOffers(containerId: string = 'ofertas-dinamicas'): Promise<void> {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -62,6 +88,8 @@ class DynamicOffers {
         return;
       }
 
+      let currentOffers = [...offers];
+      
       const sortHtml = `
         <div class="offers-sort">
           <label>
@@ -74,23 +102,7 @@ class DynamicOffers {
         </div>
       `;
 
-      const offersHtml = offers.map(offer => `
-        <div class="offer-card" data-price="${offer.price}">
-          <a href="${offer.link}" target="_blank" rel="noopener noreferrer" class="offer-card-link">
-            <div class="offer-image-wrapper">
-              <img src="${offer.thumbnail}" alt="${offer.name}" class="offer-image" />
-              ${offer.storeName ? `<div class="offer-store-badge">${offer.storeName}</div>` : ''}
-            </div>
-            <div class="offer-content">
-              <h3 class="offer-title">${offer.name}</h3>
-              <div class="offer-price-action">
-                <p class="offer-price">R$ ${offer.price.toFixed(2)}</p>
-                <button class="offer-link">Ver Oferta</button>
-              </div>
-            </div>
-          </a>
-        </div>
-      `).join('');
+      const offersHtml = this.renderOffersHtml(offers);
 
       container.innerHTML = `
         <style>
@@ -238,18 +250,14 @@ class DynamicOffers {
           (function() {
             const checkbox = document.getElementById('sort-price');
             const grid = document.querySelector('.offers-grid');
-            const cards = Array.from(document.querySelectorAll('.offer-card'));
+            const offers = ${JSON.stringify(offers)};
 
             if (checkbox && grid) {
               checkbox.addEventListener('change', () => {
-                const sortedCards = cards.sort((a, b) => {
-                  const priceA = parseFloat(a.dataset.price);
-                  const priceB = parseFloat(b.dataset.price);
-                  return checkbox.checked ? priceA - priceB : 0;
+                const sortedOffers = [...offers].sort((a, b) => {
+                  return checkbox.checked ? a.price - b.price : 0;
                 });
-
-                grid.innerHTML = '';
-                sortedCards.forEach(card => grid.appendChild(card));
+                grid.innerHTML = this.renderOffersHtml(sortedOffers);
               });
             }
           })();
