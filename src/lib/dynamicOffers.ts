@@ -14,10 +14,11 @@ interface Offer {
 }
 
 class DynamicOffers {
-  private readonly appToken = '16632982759641319bf7c241087e7a43';
-  private readonly sourceId = '38359488';
-  private readonly apiUrl = 'https://api.lomadee.com/v3';
-  private readonly pageSize = 12;
+  private readonly apiUrl: string;
+  private readonly appToken: string;
+  private readonly sourceId: string;
+  private readonly pageSize: number;
+
   private currentPage = 1;
   private paginationInfo: PaginationInfo = {
     currentPage: 1,
@@ -26,7 +27,27 @@ class DynamicOffers {
     hasPreviousPage: false
   };
 
+  constructor(
+    apiUrl: string = 'https://api.lomadee.com/v2',
+    appToken: string = '1686753633183c3b8.40011262',
+    sourceId: string = '37905839',
+    pageSize: number = 12
+  ) {
+    this.apiUrl = apiUrl;
+    this.appToken = appToken;
+    this.sourceId = sourceId;
+    this.pageSize = pageSize;
+  }
+
   private async fetchLomadeeOffers(keyword: string, page: number = 1): Promise<Offer[]> {
+    if (!this.apiUrl || !this.appToken || !this.sourceId) {
+      console.error('Configurações da Lomadee ausentes:', {
+        apiUrl: !!this.apiUrl,
+        appToken: !!this.appToken,
+        sourceId: !!this.sourceId
+      });
+      return [];
+    }
     console.log('Buscando ofertas Lomadee para:', keyword);
     if (!keyword) {
       console.log('Keyword vazia, retornando array vazio');
@@ -35,9 +56,14 @@ class DynamicOffers {
     const size = this.pageSize;
     const offset = (page - 1) * size;
     try {
-      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${size}&offset=${offset}`;
+      const encodedKeyword = encodeURIComponent(keyword);
+      const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodedKeyword}&size=${size}&offset=${offset}`;
+      console.log('URL completa Lomadee:', url);
       console.log('URL Lomadee:', url);
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Erro na API Lomadee: ${response.status} ${response.statusText}`);
+      }
       const data = await response.json();
 
       console.log('API Response:', data);
@@ -107,7 +133,12 @@ class DynamicOffers {
       }
 
       const data = await response.json();
-      console.log('Resposta Amazon:', data);
+      console.log('Resposta Amazon:', {
+        total: data.SearchResult?.Items?.length || 0,
+        keyword,
+        url: `https://${host}${uri}`,
+        data
+      });
       const items = data?.SearchResult?.Items || [];
 
       // Atualiza informações de paginação
