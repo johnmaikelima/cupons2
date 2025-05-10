@@ -11,7 +11,7 @@ class DynamicOffers {
   private readonly sourceId = '38359488';
   private readonly apiUrl = 'https://api.lomadee.com/v3';
 
-  async fetchOffers(keyword: string, size: number = 5): Promise<Offer[]> {
+  async fetchOffers(keyword: string, size: number = 12): Promise<Offer[]> {
     try {
       const url = `${this.apiUrl}/${this.appToken}/offer/_search?sourceId=${this.sourceId}&keyword=${encodeURIComponent(keyword)}&size=${size}`;
       const response = await fetch(url);
@@ -62,42 +62,82 @@ class DynamicOffers {
         return;
       }
 
+      const sortedOffers = [...offers].sort((a, b) => a.price - b.price);
+      const minPrice = Math.floor(sortedOffers[0]?.price || 0);
+      const maxPrice = Math.ceil(sortedOffers[sortedOffers.length - 1]?.price || 0);
+
+      const filterHtml = `
+        <div class="offers-filter">
+          <label for="price-range">Filtrar por preço: R$ <span id="price-value">${maxPrice}</span></label>
+          <input 
+            type="range" 
+            id="price-range" 
+            min="${minPrice}" 
+            max="${maxPrice}" 
+            value="${maxPrice}"
+            step="1"
+          />
+        </div>
+      `;
+
       const offersHtml = offers.map(offer => `
-        <div class="offer-card">
-          <div class="offer-image-wrapper">
-            <img src="${offer.thumbnail}" alt="${offer.name}" class="offer-image" />
-            ${offer.storeName ? `<div class="offer-store-badge">${offer.storeName}</div>` : ''}
-          </div>
-          <div class="offer-content">
-            <h3 class="offer-title">${offer.name}</h3>
-            <div class="offer-price-action">
-              <p class="offer-price">R$ ${offer.price.toFixed(2)}</p>
-              <a href="${offer.link}" target="_blank" rel="noopener noreferrer" class="offer-link">
-                Ver Oferta
-              </a>
+        <div class="offer-card" data-price="${offer.price}">
+          <a href="${offer.link}" target="_blank" rel="noopener noreferrer" class="offer-card-link">
+            <div class="offer-image-wrapper">
+              <img src="${offer.thumbnail}" alt="${offer.name}" class="offer-image" />
+              ${offer.storeName ? `<div class="offer-store-badge">${offer.storeName}</div>` : ''}
             </div>
-          </div>
+            <div class="offer-content">
+              <h3 class="offer-title">${offer.name}</h3>
+              <div class="offer-price-action">
+                <p class="offer-price">R$ ${offer.price.toFixed(2)}</p>
+                <button class="offer-link">Ver Oferta</button>
+              </div>
+            </div>
+          </a>
         </div>
       `).join('');
 
       container.innerHTML = `
         <style>
+          .offers-filter {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          .offers-filter label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            color: #374151;
+          }
+          .offers-filter input[type="range"] {
+            width: 100%;
+            margin: 0;
+          }
           .offers-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-            padding: 1.5rem 0;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            padding: 1rem 0;
           }
           .offer-card {
             background: white;
-            border-radius: 1rem;
+            border-radius: 0.75rem;
             overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
           }
           .offer-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          }
+          .offer-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
           }
           .offer-image-wrapper {
             position: relative;
@@ -125,45 +165,47 @@ class DynamicOffers {
             font-weight: 500;
           }
           .offer-content {
-            padding: 1.5rem;
+            padding: 1rem;
           }
           .offer-title {
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-weight: 500;
             color: #111827;
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            margin-bottom: 1rem;
-            line-height: 1.5;
-            height: 3em;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+            height: 3.6em;
           }
           .offer-price-action {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
           }
           .offer-price {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: #059669;
             margin: 0;
           }
           .offer-link {
             display: inline-block;
-            background-color: #059669;
+            background-color: #1D4FD9;
             color: white;
-            padding: 0.75rem 1.5rem;
+            padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             text-decoration: none;
             font-weight: 500;
             transition: all 0.2s;
             white-space: nowrap;
+            border: none;
+            cursor: pointer;
           }
           .offer-link:hover {
-            background-color: #047857;
+            background-color: #1644B8;
             transform: scale(1.05);
           }
           .no-offers {
@@ -174,11 +216,47 @@ class DynamicOffers {
             background: white;
             border-radius: 1rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            grid-column: 1 / -1;
+          }
+          @media (max-width: 1200px) {
+            .offers-grid {
+              grid-template-columns: repeat(3, 1fr);
+            }
+          }
+          @media (max-width: 900px) {
+            .offers-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+          @media (max-width: 600px) {
+            .offers-grid {
+              grid-template-columns: 1fr;
+            }
           }
         </style>
+        ${filterHtml}
         <div class="offers-grid">
           ${offersHtml}
         </div>
+        <script>
+          (function() {
+            const range = document.getElementById('price-range');
+            const value = document.getElementById('price-value');
+            const cards = document.querySelectorAll('.offer-card');
+
+            if (range && value) {
+              range.addEventListener('input', (e) => {
+                const maxPrice = e.target.value;
+                value.textContent = maxPrice;
+
+                cards.forEach(card => {
+                  const price = parseFloat(card.dataset.price);
+                  card.style.display = price <= maxPrice ? 'block' : 'none';
+                });
+              });
+            }
+          })();
+        </script>
       `;
     } catch (error) {
       console.error('Error rendering offers:', error);
